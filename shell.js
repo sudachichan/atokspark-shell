@@ -109,7 +109,7 @@ plugin.on('check', function (text, callback) {
 });
 plugin.on('gettext', function (token, callback) {
     var cmdline = commands[token];
-    cmdline = cmdline.replace(/\+{1}/, ' ');
-    cmdline = cmdline.replace(/\+{2}/, '+');
+    cmdline = cmdline.replace(/\+{1}/g, ' ');
+    cmdline = cmdline.replace(/\+{2}/g, '+');
     shell.exec(cmdline, callback);
 });

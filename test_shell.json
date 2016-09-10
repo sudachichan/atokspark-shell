@@ -37,6 +37,18 @@
             "ifFailed":     "既知のトリガーに対して、ERRORを返していません。"
         },
         {
+            "test":         "CHECK(multiwhitespaces)",
+            "input":        "CHECK shell:echo+foo+bar:",
+            "shouldOutput": "REPLACE \\d+",
+            "ifFailed":     "既知のトリガーに対して、\"REPLACE 整数\"を返していません。"
+        },
+        {
+            "test":         "GETTEXT(multiwhitespaces)",
+            "input":        "GETTEXT 1",
+            "shouldOutput": "TEXT \\$ echo foo bar\nfoo bar\n",
+            "ifFailed":     "既知のトリガーに対して、期待する結果を返していません。"
+        },
+        {
             "test":         "UNKNOWN",
             "input":        "hoge",
             "shouldOutput": "UNKNOWN",
