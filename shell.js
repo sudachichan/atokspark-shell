@@ -1,17 +1,17 @@
-var child_process = require('child_process');
-var EventEmitter = require('events').EventEmitter;
-var fs = require('fs');
-var marked = require('marked');
-var Plugin = require('atokspark-jsplugin');
+const child_process = require('child_process');
+const EventEmitter = require('events').EventEmitter;
+const fs = require('fs');
+const marked = require('marked');
+const Plugin = require('atokspark-jsplugin');
 
-var LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみなします。
+const LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみなします。
 
 function getPlatform() {
-    var MacPlatform = {
+    const MacPlatform = {
         shellCommand: 'sh',
         prompt:       '$',
     };
-    var WindowsPlatform = {
+    const WindowsPlatform = {
         shellCommand: 'cmd',
         prompt:       '>',
     };
@@ -27,7 +27,7 @@ function ShellOutput(stream) {
     this.buffer = '';    
     this.emitter = new EventEmitter();
 
-    var that = this;
+    const that = this;
     stream.on('data', function () {
         that.onData.apply(that, arguments);
     });
@@ -37,8 +37,8 @@ ShellOutput.prototype = {
         this.buffer = this.takeLines(this.buffer + data);
     },
     takeLines: function (buf) {
-        var newLines = buf.split('\n');
-        var notCompletedLine = newLines.pop();
+        const newLines = buf.split('\n');
+        const notCompletedLine = newLines.pop();
         this.emitter.emit('lines', newLines);
         return notCompletedLine;
     },
@@ -55,7 +55,7 @@ function Shell(platform) {
     this.lines = [];
     this.lastLines = -1;
 
-    var that = this;
+    const that = this;
     this.stdout = new ShellOutput(this.child.stdout);
     this.stdout.emitter.on('lines', function (newLines) {
         that.lines = that.lines.concat(newLines);
@@ -79,7 +79,7 @@ Shell.prototype = {
         } else {
             this.lastLines = this.lines.length;
 
-            var that = this;
+            const that = this;
             setTimeout(function () {
                 that.waitOutputDone(callback);
             }, LINE_TIMEOUT)
@@ -93,7 +93,7 @@ Shell.prototype = {
     }
 };
 
-var shell = new Shell(getPlatform());
+const shell = new Shell(getPlatform());
 Plugin.byRules({
     async: true,
     replaces: {
@@ -111,7 +111,7 @@ Plugin.byRules({
                     throw err;
                 }
                 
-                var renderer = new marked.Renderer();
+                const renderer = new marked.Renderer();
                 renderer.code = function (code, language) {
                     return '<pre style="background-color: lightgray;">' + code + '</pre>';
                 };
