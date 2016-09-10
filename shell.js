@@ -23,51 +23,51 @@ function getPlatform() {
     }
 }
 
-function ShellOutput(stream) {
-    this.stream = stream;
-    this.buffer = '';    
-    this.emitter = new EventEmitter();
+class ShellOutput {
+    constructor(stream) {
+        this.stream = stream;
+        this.buffer = '';    
+        this.emitter = new EventEmitter();
 
-    stream.on('data', (data) => {
-        this.buffer = this.takeLines(this.buffer + data);
-    });
-}
-ShellOutput.prototype = {
-    takeLines: function (buf) {
+        stream.on('data', (data) => {
+            this.buffer = this.takeLines(this.buffer + data);
+        });
+    }
+    takeLines(buf) {
         const newLines = buf.split('\n');
         const notCompletedLine = newLines.pop();
         this.emitter.emit('lines', newLines);
         return notCompletedLine;
-    },
-    reset: function () {
+    }
+    reset() {
         this.buffer = '';
-    },
-};
-
-function Shell(platform) {
-    this.platform = platform;
-    this.child = child_process.spawn(platform.shellCommand, [], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    this.lines = [];
-    this.lastLines = -1;
-
-    this.stdout = new ShellOutput(this.child.stdout);
-    this.stdout.emitter.on('lines', (newLines) => {
-        this.lines = this.lines.concat(newLines);
-    });
-    this.stderr = new ShellOutput(this.child.stderr);
-    this.stderr.emitter.on('lines', (newLines) => {
-        this.lines = this.lines.concat(newLines);
-    });
+    }
 }
-Shell.prototype = {
-    exec: function (cmdline, callback) {
+
+class Shell {
+    constructor(platform) {
+        this.platform = platform;
+        this.child = child_process.spawn(platform.shellCommand, [], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        this.lines = [];
+        this.lastLines = -1;
+
+        this.stdout = new ShellOutput(this.child.stdout);
+        this.stdout.emitter.on('lines', (newLines) => {
+            this.lines = this.lines.concat(newLines);
+        });
+        this.stderr = new ShellOutput(this.child.stderr);
+        this.stderr.emitter.on('lines', (newLines) => {
+            this.lines = this.lines.concat(newLines);
+        });
+    }    
+    exec(cmdline, callback) {
         this.lines.push([this.platform.prompt, cmdline].join(' '));
         this.child.stdin.write(cmdline + '\n');
         this.waitOutputDone(callback);
-    },
-    waitOutputDone: function (callback) {
+    }
+    waitOutputDone(callback) {
         if (this.lastLines === this.lines.length) {
             this.lines.push(''); // 改行を調整しています。
             callback(this.lines.join('\n'));
@@ -79,8 +79,8 @@ Shell.prototype = {
                 this.waitOutputDone(callback);
             }, LINE_TIMEOUT)
         }
-    },
-    reset: function () {
+    }
+    reset() {
         this.lines = [];
         this.lastLines = -1;
         this.stdout.reset();
