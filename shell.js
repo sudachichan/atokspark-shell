@@ -1,33 +1,103 @@
 var Plugin = require('atokspark-jsplugin');
-
+var EventEmitter = require('events').EventEmitter;
 var child_process = require('child_process');
-var child = child_process.spawn('sh', [], {
-    stdio: ['pipe', 'pipe', 'pipe'],
-});
-var stdout = '';
-var stderr = '';
-child.stdout.on('data', function (data) {
-    stdout = takeLines(stdout + data);
-});
-child.stderr.on('data', function (data) {
-    stderr = takeLines(stderr + data);
-});
-var lines = [];
-function takeLines(buf) {
-    var newLines = buf.split('\n');
-    while (newLines.length > 0) {
-        lines.push(newLines.shift());
+
+var LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみなします。
+
+function getPlatform() {
+    var MacPlatform = {
+        shellCommand: 'sh',
+        prompt:       '$',
+    };
+    var WindowsPlatform = {
+        shellCommand: 'cmd',
+        prompt:       '>',
+    };
+    switch (process.platform) {
+    case 'darwin':  return MacPlatform;
+    case 'win32':   return WindowsPlatform;
+    default:        throw "サポートされていないプラットフォームです。";
     }
-    return lines[0];
 }
 
+function ShellOutput(stream) {
+    this.stream = stream;
+    this.buffer = '';    
+    this.emitter = new EventEmitter();
+
+    var that = this;
+    stream.on('data', function () {
+        that.onData.apply(that, arguments);
+    });
+}
+ShellOutput.prototype = {
+    onData: function (data) {
+        this.buffer = this.takeLines(this.buffer + data);
+    },
+    takeLines: function (buf) {
+        var newLines = buf.split('\n');
+        var notCompletedLine = newLines.pop();
+        this.emitter.emit('lines', newLines);
+        return notCompletedLine;
+    },
+    reset: function () {
+        this.buffer = '';
+    },
+};
+
+function Shell(platform) {
+    this.platform = platform;
+    this.child = child_process.spawn(platform.shellCommand, [], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    this.lines = [];
+    this.lastLines = -1;
+
+    var that = this;
+    this.stdout = new ShellOutput(this.child.stdout);
+    this.stdout.emitter.on('lines', function (newLines) {
+        that.lines = that.lines.concat(newLines);
+    });
+    this.stderr = new ShellOutput(this.child.stderr);
+    this.stderr.emitter.on('lines', function (newLines) {
+        that.lines = that.lines.concat(newLines);
+    });
+}
+Shell.prototype = {
+    exec: function (cmdline, callback) {
+        this.lines.push(this.platform.prompt + ' ' + cmdline);
+        this.child.stdin.write(cmdline + '\n');
+        this.waitOutputDone(callback);
+    },
+    waitOutputDone: function (callback) {
+        if (this.lastLines === this.lines.length) {
+            this.lines.push(''); // 改行を調整しています。
+            callback(this.lines.join('\n'));
+            this.reset();
+        } else {
+            this.lastLines = this.lines.length;
+
+            var that = this;
+            setTimeout(function () {
+                that.waitOutputDone(callback);
+            }, LINE_TIMEOUT)
+        }
+    },
+    reset: function () {
+        this.lines = [];
+        this.lastLines = -1;
+        this.stdout.reset();
+        this.stderr.reset();
+    }
+};
+
 var MAX_COMMANDS = 5;
-var LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみなします。
 var commands = [];
 var index = 0;
 
-var shell = new Plugin().run();
-shell.on('check', function (text, callback) {
+var shell = new Shell();
+var plugin = new Plugin().run();
+plugin.on('check', function (text, callback) {
     var matches = /shell:(.*):/.exec(text);
     if (!matches) {
         callback(null);
@@ -37,24 +107,9 @@ shell.on('check', function (text, callback) {
     callback(index);
     index = (index + 1) % MAX_COMMANDS;
 });
-shell.on('gettext', function (token, callback) {
+plugin.on('gettext', function (token, callback) {
     var cmdline = commands[token];
     cmdline = cmdline.replace(/\+{1}/, ' ');
     cmdline = cmdline.replace(/\+{2}/, '+');
-    lines.push('$ ' + cmdline);
-    child.stdin.write(cmdline + '\n');
-    var lastLines = 0;
-    function checkOutput() {
-        if (lastLines == lines.length) {
-            // 500ms 出力がなければコマンドの実行が終わったと見なします。
-            callback(lines.join('\n'));
-            lines = [];
-            stdout = '';
-            stderr = '';
-        } else {
-            lastLines = lines.length;
-            setTimeout(checkOutput, LINE_TIMEOUT);
-        }
-    };
-    setTimeout(checkOutput, LINE_TIMEOUT);
+    shell.exec(cmdline, callback);
 });
