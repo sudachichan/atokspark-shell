@@ -95,7 +95,7 @@ var MAX_COMMANDS = 5;
 var commands = [];
 var index = 0;
 
-var shell = new Shell();
+var shell = new Shell(getPlatform());
 var plugin = new Plugin().run();
 plugin.on('check', function (text, callback) {
     var matches = /shell:(.*):/.exec(text);
