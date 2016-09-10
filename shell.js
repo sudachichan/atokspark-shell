@@ -62,7 +62,7 @@ function Shell(platform) {
 }
 Shell.prototype = {
     exec: function (cmdline, callback) {
-        this.lines.push(this.platform.prompt + ' ' + cmdline);
+        this.lines.push([this.platform.prompt, cmdline].join(' '));
         this.child.stdin.write(cmdline + '\n');
         this.waitOutputDone(callback);
     },
@@ -100,18 +100,18 @@ Plugin.byRules({
     },
     views: {
         'shell:': (callback) => {
-            fs.readFile(__dirname + '/README.md', 'utf8', (err, data) => {
+            fs.readFile(`${__dirname}/README.md`, 'utf8', (err, data) => {
                 if (err) {
                     throw err;
                 }
                 
                 const renderer = new marked.Renderer();
                 renderer.code = function (code, language) {
-                    return '<pre style="background-color: lightgray;">' + code + '</pre>';
+                    return `<pre style="background-color: lightgray;">${code}</pre>`;
                 };
                 renderer.codespan = function (code) {
                     code = code.replace(' ', '&nbsp;');
-                    return '<code style="background-color: lightgray;">' + code + '</code>';
+                    return `<code style="background-color: lightgray;">${code}</code>`;
                 };
                 callback(marked(data, { renderer: renderer }));
             });
