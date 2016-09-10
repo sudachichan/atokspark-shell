@@ -23,11 +23,11 @@ function getPlatform() {
     }
 }
 
-class ShellOutput {
+class ShellOutput extends EventEmitter {
     constructor(stream) {
+        super();
         this.stream = stream;
         this.buffer = '';    
-        this.emitter = new EventEmitter();
 
         stream.on('data', (data) => {
             this.buffer = this.takeLines(this.buffer + data);
@@ -36,7 +36,7 @@ class ShellOutput {
     takeLines(buf) {
         const newLines = buf.split('\n');
         const notCompletedLine = newLines.pop();
-        this.emitter.emit('lines', newLines);
+        this.emit('lines', newLines);
         return notCompletedLine;
     }
     reset() {
@@ -54,11 +54,11 @@ class Shell {
         this.lastLines = -1;
 
         this.stdout = new ShellOutput(this.child.stdout);
-        this.stdout.emitter.on('lines', (newLines) => {
+        this.stdout.on('lines', (newLines) => {
             this.lines = this.lines.concat(newLines);
         });
         this.stderr = new ShellOutput(this.child.stderr);
-        this.stderr.emitter.on('lines', (newLines) => {
+        this.stderr.on('lines', (newLines) => {
             this.lines = this.lines.concat(newLines);
         });
     }    
