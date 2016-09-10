@@ -1,6 +1,8 @@
-var Plugin = require('atokspark-jsplugin');
-var EventEmitter = require('events').EventEmitter;
 var child_process = require('child_process');
+var EventEmitter = require('events').EventEmitter;
+var fs = require('fs');
+var marked = require('marked');
+var Plugin = require('atokspark-jsplugin');
 
 var LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみなします。
 
@@ -100,6 +102,25 @@ Plugin.byRules({
             cmdline = cmdline.replace(/\+{1}/g, ' ');
             cmdline = cmdline.replace(/\+{2}/g, '+');
             shell.exec(cmdline, callback);
+        }
+    },
+    views: {
+        'shell:': function (callback) {
+            fs.readFile(__dirname + '/README.md', 'utf8', function (err, data) {
+                if (err) {
+                    throw err;
+                }
+                
+                var renderer = new marked.Renderer();
+                renderer.code = function (code, language) {
+                    return '<pre style="background-color: lightgray;">' + code + '</pre>';
+                };
+                renderer.codespan = function (code) {
+                    code = code.replace(' ', '&nbsp;');
+                    return '<code style="background-color: lightgray;">' + code + '</code>';
+                };
+                callback(marked(data, { renderer: renderer }));
+            });
         }
     }
 });
