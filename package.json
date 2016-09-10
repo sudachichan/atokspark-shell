@@ -1,0 +1,22 @@
+{
+  "name": "atokspark-shell",
+  "version": "1.0.0",
+  "description": "",
+  "main": "shell.js",
+  "scripts": {
+    "test": "test_plugin test_shell.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sudachichan/atokspark-shell.git"
+  },
+  "author": "sudachichan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sudachichan/atokspark-shell/issues"
+  },
+  "homepage": "https://github.com/sudachichan/atokspark-shell#readme",
+  "dependencies": {
+    "atokspark-jsplugin": "git+https://github.com/sudachichan/atokspark-jsplugin.git"
+  }
+}
