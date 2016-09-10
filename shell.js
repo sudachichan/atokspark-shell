@@ -1,3 +1,4 @@
+'use strict'
 const child_process = require('child_process');
 const EventEmitter = require('events').EventEmitter;
 const fs = require('fs');
@@ -92,7 +93,7 @@ Plugin.byRules({
     async: true,
     replaces: {
         'shell:(.*):': (callback, matches) => {
-            var cmdline = matches[1];
+            let cmdline = matches[1];
             cmdline = cmdline.replace(/\+{1}/g, ' ');
             cmdline = cmdline.replace(/\+{2}/g, '+');
             shell.exec(cmdline, callback);
