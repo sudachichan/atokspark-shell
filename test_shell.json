@@ -20,14 +20,14 @@
         },
         {
             "test":         "CHECK(found)",
-            "input":        "CHECK shell:ls:",
+            "input":        "CHECK shell:ls+*.js:",
             "shouldOutput": "REPLACE \\d+",
             "ifFailed":     "既知のトリガーに対して、\"REPLACE 整数\"を返していません。"
         },
         {
             "test":         "GETTEXT(succeeds)",
             "input":        "GETTEXT 0",
-            "shouldOutput": "TEXT \\$ ls\nLICENSE\nREADME.md\nnode_modules\nnpm-debug.log\npackage.json\nshell.js\ntest_shell.json\n",
+            "shouldOutput": "TEXT \\$ ls \\*\\.js\nshell\\.js\n",
             "ifFailed":     "既知のトリガーに対して、期待する結果を返していません。"
         },
         {
