@@ -27,15 +27,11 @@ function ShellOutput(stream) {
     this.buffer = '';    
     this.emitter = new EventEmitter();
 
-    const that = this;
-    stream.on('data', function () {
-        that.onData.apply(that, arguments);
+    stream.on('data', (data) => {
+        this.buffer = this.takeLines(this.buffer + data);
     });
 }
 ShellOutput.prototype = {
-    onData: function (data) {
-        this.buffer = this.takeLines(this.buffer + data);
-    },
     takeLines: function (buf) {
         const newLines = buf.split('\n');
         const notCompletedLine = newLines.pop();
@@ -55,14 +51,13 @@ function Shell(platform) {
     this.lines = [];
     this.lastLines = -1;
 
-    const that = this;
     this.stdout = new ShellOutput(this.child.stdout);
-    this.stdout.emitter.on('lines', function (newLines) {
-        that.lines = that.lines.concat(newLines);
+    this.stdout.emitter.on('lines', (newLines) => {
+        this.lines = this.lines.concat(newLines);
     });
     this.stderr = new ShellOutput(this.child.stderr);
-    this.stderr.emitter.on('lines', function (newLines) {
-        that.lines = that.lines.concat(newLines);
+    this.stderr.emitter.on('lines', (newLines) => {
+        this.lines = this.lines.concat(newLines);
     });
 }
 Shell.prototype = {
@@ -79,9 +74,8 @@ Shell.prototype = {
         } else {
             this.lastLines = this.lines.length;
 
-            const that = this;
-            setTimeout(function () {
-                that.waitOutputDone(callback);
+            setTimeout(() => {
+                this.waitOutputDone(callback);
             }, LINE_TIMEOUT)
         }
     },
@@ -97,7 +91,7 @@ const shell = new Shell(getPlatform());
 Plugin.byRules({
     async: true,
     replaces: {
-        'shell:(.*):': function (callback, matches) {
+        'shell:(.*):': (callback, matches) => {
             var cmdline = matches[1];
             cmdline = cmdline.replace(/\+{1}/g, ' ');
             cmdline = cmdline.replace(/\+{2}/g, '+');
@@ -105,8 +99,8 @@ Plugin.byRules({
         }
     },
     views: {
-        'shell:': function (callback) {
-            fs.readFile(__dirname + '/README.md', 'utf8', function (err, data) {
+        'shell:': (callback) => {
+            fs.readFile(__dirname + '/README.md', 'utf8', (err, data) => {
                 if (err) {
                     throw err;
                 }
