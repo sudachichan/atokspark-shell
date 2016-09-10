@@ -92,11 +92,14 @@ Shell.prototype = {
 };
 
 var shell = new Shell(getPlatform());
-Plugin.byRulesAsync({
-    'shell:(.*):': function (callback, matches) {
-        var cmdline = matches[1];
-        cmdline = cmdline.replace(/\+{1}/g, ' ');
-        cmdline = cmdline.replace(/\+{2}/g, '+');
-        shell.exec(cmdline, callback);
+Plugin.byRules({
+    async: true,
+    replaces: {
+        'shell:(.*):': function (callback, matches) {
+            var cmdline = matches[1];
+            cmdline = cmdline.replace(/\+{1}/g, ' ');
+            cmdline = cmdline.replace(/\+{2}/g, '+');
+            shell.exec(cmdline, callback);
+        }
     }
 });
