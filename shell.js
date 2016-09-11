@@ -2,6 +2,7 @@
 const child_process = require('child_process');
 const EventEmitter = require('events').EventEmitter;
 const fs = require('fs');
+const iconv = require('iconv-lite');
 const marked = require('marked');
 const Plugin = require('atokspark-jsplugin');
 
@@ -10,11 +11,23 @@ const LINE_TIMEOUT = 500; // 500ms 出力がなければコマンド終了とみ
 function getPlatform() {
     const MacPlatform = {
         shellCommand: 'sh',
-        prompt:       '$',
+        prompt: function (shell, cmdline) {
+            shell.lines = [['$', cmdline].join(' ')];
+            shell.stdout.reset();
+        },
+        convert: function (data) {
+            return data;
+        },
     };
     const WindowsPlatform = {
         shellCommand: 'cmd',
-        prompt:       '>',
+        prompt: function (shell, cmdline) {
+            shell.lines = [];
+            shell.stdout.reset('>');
+        },
+        convert: function (data) {
+            return iconv.decode(data, 'Windows-31J');
+        },
     };
     switch (process.platform) {
     case 'darwin':  return MacPlatform;
@@ -24,13 +37,13 @@ function getPlatform() {
 }
 
 class ShellOutput extends EventEmitter {
-    constructor(stream) {
+    constructor(platform, stream) {
         super();
         this.stream = stream;
         this.buffer = '';    
 
         stream.on('data', (data) => {
-            this.buffer = this.takeLines(this.buffer + data);
+            this.buffer = this.takeLines(this.buffer + platform.convert(data));
         });
     }
     takeLines(buf) {
@@ -39,8 +52,8 @@ class ShellOutput extends EventEmitter {
         this.emit('lines', newLines);
         return notCompletedLine;
     }
-    reset() {
-        this.buffer = '';
+    reset(text) {
+        this.buffer = text ? text : '';
     }
 }
 
@@ -53,17 +66,17 @@ class Shell {
         this.lines = [];
         this.lastLines = -1;
 
-        this.stdout = new ShellOutput(this.child.stdout);
+        this.stdout = new ShellOutput(platform, this.child.stdout);
         this.stdout.on('lines', (newLines) => {
             this.lines = this.lines.concat(newLines);
         });
-        this.stderr = new ShellOutput(this.child.stderr);
+        this.stderr = new ShellOutput(platform, this.child.stderr);
         this.stderr.on('lines', (newLines) => {
             this.lines = this.lines.concat(newLines);
         });
     }    
     exec(cmdline, callback) {
-        this.lines.push([this.platform.prompt, cmdline].join(' '));
+        this.reset(cmdline);
         this.child.stdin.write(cmdline + '\n');
         this.waitOutputDone(callback);
     }
@@ -71,7 +84,6 @@ class Shell {
         if (this.lastLines === this.lines.length) {
             this.lines.push(''); // 改行を調整しています。
             callback(this.lines.join('\n'));
-            this.reset();
         } else {
             this.lastLines = this.lines.length;
 
@@ -80,10 +92,9 @@ class Shell {
             }, LINE_TIMEOUT)
         }
     }
-    reset() {
-        this.lines = [];
+    reset(cmdline) {
         this.lastLines = -1;
-        this.stdout.reset();
+        this.platform.prompt(this, cmdline);
         this.stderr.reset();
     }
 };

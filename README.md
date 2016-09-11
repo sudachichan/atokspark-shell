@@ -10,8 +10,6 @@
 最後の例のようにコマンドライン中に記述したい空白文字は、代わりに `+` を使ってください。
 (ATOK Spark は ` ` を入力するとそこで処理を中断してしまうようです。)
 
-今のところ Mac の shell コマンドの実行のみ対応です。
-
 ## How to run
 
 以下のコマンドでエラーが出なければ動作するはずです。
@@ -21,6 +19,8 @@ $ cd atokspark-shell
 $ npm update
 $ npm run test
 ```
+
+(※Windowsではまだテストが正常に動作していません。)
 
 なお、 ATOK Spark の plugin.lst には以下のように指定してください。(Mac, nodebrew で node.js をインストールしている場合の例)
 ```

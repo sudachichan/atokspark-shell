@@ -18,6 +18,7 @@
   "homepage": "https://github.com/sudachichan/atokspark-shell#readme",
   "dependencies": {
     "atokspark-jsplugin": "git+https://github.com/sudachichan/atokspark-jsplugin.git",
+    "iconv-lite": "^0.4.13",
     "marked": "^0.3.6"
   }
 }
