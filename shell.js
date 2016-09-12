@@ -122,10 +122,10 @@ Plugin.byRules({
                     return `<pre style="background-color: lightgray;">${code}</pre>`;
                 };
                 renderer.codespan = function (code) {
-                    code = code.replace(' ', '&nbsp;');
                     return `<code style="background-color: lightgray;">${code}</code>`;
                 };
-                callback(marked(data, { renderer: renderer }));
+                var html = marked(data, { renderer: renderer });
+                callback(`<html xmlns="http://www.w3.org/1999/xhtml"><body>${html}</body></html>`);
             });
         }
     }
