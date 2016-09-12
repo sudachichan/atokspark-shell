@@ -124,7 +124,7 @@ Plugin.byRules({
                 renderer.codespan = function (code) {
                     return `<code style="background-color: lightgray;">${code}</code>`;
                 };
-                var html = marked(data, { renderer: renderer });
+                const html = marked(data, { renderer: renderer });
                 callback(`<html xmlns="http://www.w3.org/1999/xhtml"><body>${html}</body></html>`);
             });
         }
