@@ -100,7 +100,7 @@ class Shell {
 };
 
 const shell = new Shell(getPlatform());
-Plugin.byRules({
+const shellPlugin = Plugin.byRules({
     async: true,
     replaces: {
         'shell:(.*):': (callback, matches) => {
@@ -130,3 +130,8 @@ Plugin.byRules({
         }
     }
 });
+
+module.exports = shellPlugin;
+if (require.main === module) {
+    shellPlugin.run();
+}
